@@ -1,0 +1,12 @@
+{
+  "name": "datatrack-class-server",
+  "version": "1.0.0",
+  "description": "SQLite backend for the DataTrack class leaderboard and sync (uses built-in node:sqlite — no native builds)",
+  "main": "server.js",
+  "scripts": { "start": "node server.js" },
+  "engines": { "node": ">=22.5" },
+  "dependencies": {
+    "cors": "^2.8.5",
+    "express": "^4.19.2"
+  }
+}
