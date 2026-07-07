@@ -2524,13 +2524,18 @@ function renderCareer(){initCompanySelect();renderJobs();renderDatasets();render
 <script>
 /* ================= AI CORE ================= */
 async function askAI(system,messages){
-  const res=await fetch("https://api.anthropic.com/v1/messages",{
-    method:"POST",headers:{"Content-Type":"application/json"},
-    body:JSON.stringify({model:"claude-sonnet-4-6",max_tokens:1000,system,messages})
+  const base=typeof SERVER_URL!=="undefined"?SERVER_URL:(typeof apiURL==="function"?apiURL():"");
+  const token=typeof AUTH!=="undefined"&&AUTH?AUTH.token:null;
+  if(!base)throw new Error("no server");
+  const headers={"Content-Type":"application/json"};
+  if(token)headers["Authorization"]="Bearer "+token;
+  const res=await fetch(base+"/api/ai",{
+    method:"POST",headers,
+    body:JSON.stringify({system,messages})
   });
-  if(!res.ok)throw new Error("API "+res.status);
+  if(!res.ok){const d=await res.json().catch(()=>({}));throw new Error(d.error||("AI "+res.status));}
   const data=await res.json();
-  return (data.content||[]).filter(b=>b.type==="text").map(b=>b.text).join("\n");
+  return data.text||"";
 }
 function parseAIJSON(text){
   const clean=text.replace(/```json|```/g,"").trim();
@@ -2562,7 +2567,7 @@ function thinking(logEl,label){
   d.innerHTML='<span class="spinner"></span>'+esc(label||"Thinking…");
   logEl.appendChild(d);logEl.scrollTop=logEl.scrollHeight;return d;
 }
-const OFFLINE_MSG="I couldn't reach the AI service — you may be offline. Everything else in DataTrack still works; the Library has offline docs for this topic.";
+const OFFLINE_MSG="AI features need you to be signed in and the server to be online. Everything else in DataTrack still works offline — the Library has full docs for this topic.";
 
 /* ================= AI STUDY COACH ================= */
 let Coach={key:null,history:[]};
