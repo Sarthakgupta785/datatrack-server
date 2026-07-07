@@ -9,6 +9,7 @@
  *   SECRET            required in production — signs login tokens (any long random string)
  *   ADMIN_KEY         protects /api/admin/* endpoints
  *   GOOGLE_CLIENT_ID  optional — enables "Continue with Google"
+ *   GEMINI_KEY        optional — enables AI features (free from aistudio.google.com/apikey)
  *   DB_PATH, PORT     optional
  *
  * Endpoints:
@@ -34,6 +35,7 @@ const PORT = process.env.PORT || 3000;
 const ADMIN_KEY = process.env.ADMIN_KEY || "change-me";
 const SECRET = process.env.SECRET || "dev-secret-change-me";
 const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID || "";
+const GEMINI_KEY = process.env.GEMINI_KEY || "";
 
 const db = new DatabaseSync(process.env.DB_PATH || "datatrack.db");
 db.exec("PRAGMA journal_mode = WAL;");
@@ -123,7 +125,37 @@ app.get("/", (_req, res) => {
   });
 });
 
-app.get("/api/config", (_req, res) => res.json({ googleClientId: GOOGLE_CLIENT_ID || null }));
+app.get("/api/config", (_req, res) => res.json({ googleClientId: GOOGLE_CLIENT_ID || null, aiEnabled: !!GEMINI_KEY }));
+
+/* ---------- AI proxy (Gemini) ---------- */
+app.post("/api/ai", requireAuth, async (req, res) => {
+  if (!GEMINI_KEY) return res.status(400).json({ error: "AI not configured on this server" });
+  const { system, messages } = req.body || {};
+  if (!messages || !Array.isArray(messages)) return res.status(400).json({ error: "messages array required" });
+  try {
+    // Convert our chat format to Gemini format
+    const contents = [];
+    messages.forEach(m => {
+      contents.push({
+        role: m.role === "assistant" ? "model" : "user",
+        parts: [{ text: m.content }]
+      });
+    });
+    const body = {
+      contents,
+      systemInstruction: system ? { parts: [{ text: system }] } : undefined,
+      generationConfig: { maxOutputTokens: 1200 }
+    };
+    const r = await fetch(
+      "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=" + GEMINI_KEY,
+      { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) }
+    );
+    const data = await r.json();
+    if (!r.ok) return res.status(502).json({ error: data.error?.message || "Gemini error" });
+    const text = data.candidates?.[0]?.content?.parts?.[0]?.text || "";
+    res.json({ text });
+  } catch (e) { res.status(502).json({ error: "AI request failed: " + e.message }); }
+});
 
 /* ---------- auth ---------- */
 app.post("/api/auth/signup", (req, res) => {
