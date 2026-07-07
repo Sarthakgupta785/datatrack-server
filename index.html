@@ -798,7 +798,7 @@ ORDER BY revenue DESC;</textarea>
         <p class="sub">Connect to your class server to join the leaderboard. Only summary stats are shared — XP, streak, lessons, scores. Never your notes, applications, or resume.</p>
         <div class="form-row">
           <input class="inp" id="sync-name" placeholder="Your display name" style="width:170px">
-          <input class="inp" id="sync-url" placeholder="Server URL, e.g. https://datatrack-api.onrender.com" style="flex:1;min-width:220px">
+          <input class="inp" id="sync-url" value="https://datatrack-server-1.onrender.com" style="display:none">
           <label style="display:flex;align-items:center;gap:7px;font-size:13px"><input type="checkbox" id="sync-enabled" style="accent-color:var(--pine)">Enable</label>
           <button class="btn" onclick="saveSyncCfg()">Save</button>
           <button class="btn ghost" onclick="syncNow(true)">Sync now</button>
@@ -856,7 +856,6 @@ ORDER BY revenue DESC;</textarea>
 
     <div id="auth-forms">
       <p class="sub">Sign in to save progress to the cloud and continue on any device.</p>
-      <input class="inp" id="auth-url" placeholder="Server URL, e.g. https://datatrack-api.onrender.com" style="margin-top:14px">
       <div class="auth-tabs">
         <button id="auth-tab-in" class="active" onclick="authTab('in')">Sign in</button>
         <button id="auth-tab-up" onclick="authTab('up')">Create account</button>
@@ -3076,7 +3075,8 @@ const AUTH_KEY="datatrack_auth", GUEST_KEY="datatrack_guest";
 let AUTH=(()=>{try{return JSON.parse(localStorage.getItem(AUTH_KEY))||null}catch(e){return null}})();
 let authMode="in", cloudDirty=false, cloudBusy=false;
 
-function apiURL(){return (AUTH&&AUTH.url)||($("auth-url")&&$("auth-url").value.trim().replace(/\/+$/,""))||(syncCfg().url||"");}
+const SERVER_URL="https://datatrack-server-1.onrender.com";
+function apiURL(){return (AUTH&&AUTH.url)||SERVER_URL;}
 async function api(path,opts={}){
   const base=apiURL();
   if(!base)throw new Error("no-server");
@@ -3103,8 +3103,6 @@ function renderAccount(){
     $("acct-avatar").textContent=(AUTH.name||AUTH.email||"?")[0].toUpperCase();
     $("acct-name").textContent=AUTH.name||"";
     $("acct-email").textContent=AUTH.email||"";
-  }else{
-    $("auth-url").value=apiURL();
   }
   // tracker card + sidebar button
   const line=$("acct-line");
@@ -3134,19 +3132,19 @@ function guestMode(){
 async function authSubmit(){
   const email=$("auth-email").value.trim(),pass=$("auth-pass").value,name=$("auth-name").value.trim();
   const err=$("auth-err");err.textContent="";
-  if(!apiURL()){err.textContent="Enter your class server URL first (ask whoever deployed it).";return;}
+  if(!apiURL()){err.textContent="Server not configured.";return;}
   if(!email||!pass){err.textContent="Email and password are both needed.";return;}
   $("auth-go").disabled=true;$("auth-go").textContent=authMode==="up"?"Creating…":"Signing in…";
   try{
     const path=authMode==="up"?"/api/auth/signup":"/api/auth/login";
     const body=authMode==="up"?{email,password:pass,name}:{email,password:pass};
-    const url=$("auth-url").value.trim().replace(/\/+$/,"");
-    AUTH={url};   // so api() targets the typed URL
+    const url=SERVER_URL;
+    AUTH={url};   // so api() targets the server
     const r=await api(path,{method:"POST",body:JSON.stringify(body)});
     finishLogin(url,r);
   }catch(e){
     AUTH=null;
-    err.textContent=e.message==="no-server"?"Server URL missing.":(e.status?e.message:"Server unreachable — check the URL (free hosts take ~30s to wake).");
+    err.textContent=e.status?e.message:"Server is waking up — wait 30 seconds and try again.";
   }
   $("auth-go").disabled=false;
   $("auth-go").textContent=authMode==="up"?"Create account":"Sign in"; // restore label WITHOUT wiping the error
