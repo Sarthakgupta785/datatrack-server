@@ -2,7 +2,10 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#0E5748">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
 <title>DataTrack — Data Science Prep Studio</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;600;700;800&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
@@ -313,6 +316,23 @@ table.log td.mono{font-family:var(--font-mono);font-size:12px}
 .week-body b{font-size:13.5px}
 .week-body p{font-size:12.5px;color:var(--muted);margin-top:2px}
 
+
+/* ---------- Auth / account ---------- */
+.auth-veil{position:fixed;inset:0;background:var(--paper);z-index:90;display:grid;place-items:center;padding:18px;overflow-y:auto}
+.auth-card{width:min(400px,100%);padding:26px}
+.auth-brand{display:flex;align-items:center;gap:12px;margin-bottom:6px}
+.auth-tabs{display:flex;gap:4px;background:var(--line-soft);border-radius:10px;padding:4px;margin:16px 0 14px}
+.auth-tabs button{flex:1;border:none;background:none;padding:8px;border-radius:8px;font-size:13px;font-weight:600;color:var(--muted)}
+.auth-tabs button.active{background:var(--surface);color:var(--ink);box-shadow:var(--shadow)}
+.auth-card .inp{width:100%;margin-bottom:10px}
+.auth-err{color:var(--danger);font-size:12.5px;min-height:18px;margin:2px 0 8px}
+.auth-or{display:flex;align-items:center;gap:10px;color:var(--muted);font-size:11px;margin:14px 0;text-transform:uppercase;letter-spacing:.08em}
+.auth-or::before,.auth-or::after{content:"";flex:1;height:1px;background:var(--line)}
+.auth-guest{display:block;width:100%;text-align:center;background:none;border:none;color:var(--muted);font-size:12.5px;margin-top:14px;text-decoration:underline}
+.avatar{width:38px;height:38px;border-radius:50%;background:var(--pine);color:#fff;display:grid;place-items:center;font-family:var(--font-display);font-weight:700;font-size:15px;flex:none}
+.acct-row{display:flex;align-items:center;gap:12px}
+.cloud-dot{width:8px;height:8px;border-radius:50%;background:var(--green);display:inline-block;margin-right:5px}
+
 @media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
 @media print{
   body *{visibility:hidden}
@@ -334,6 +354,20 @@ table.log td.mono{font-family:var(--font-mono);font-size:12px}
   .lib-nav{position:static;display:flex;overflow-x:auto;gap:4px}
   .lib-nav button{width:auto;flex:none;border-left:none;border-bottom:3px solid transparent;border-radius:8px 8px 0 0}
   .lib-nav button.active{border-left:none;border-bottom-color:var(--tc,var(--pine))}
+  #sql-layout,#rm-layout,#pj-layout{grid-template-columns:1fr!important}
+  .drawer{width:100vw;right:-100vw}
+  input.inp,select.inp,textarea.inp,.form-row input,.form-row select,.chat-input textarea,.pal input{font-size:16px} /* stops iOS auto-zoom */
+  .side{padding-bottom:calc(6px + env(safe-area-inset-bottom))}
+  .main{padding-bottom:calc(116px + env(safe-area-inset-bottom))}
+  table.log{display:block;overflow-x:auto;white-space:nowrap}
+  .topbar h2{font-size:21px}
+  .nav-btn{min-width:62px}
+  .pal-veil{padding-top:6vh}
+  .coach-quick,#twin-chips{flex-wrap:nowrap;overflow-x:auto;padding-bottom:6px}
+  .coach-quick .mini-btn,#twin-chips .mini-btn{flex:none}
+  #pane-career-twin .card{height:72vh!important}
+  .heatmap{grid-template-rows:repeat(7,10px)}.hm-cell{width:10px;height:10px}
+  .badge-grid{grid-template-columns:repeat(auto-fill,minmax(130px,1fr))}
 }
 </style>
 </head>
@@ -378,6 +412,8 @@ table.log td.mono{font-family:var(--font-mono);font-size:12px}
       <div class="side-tools">
         <button class="tool-btn" onclick="openPalette()" title="Search everything">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg><kbd>Ctrl K</kbd></button>
+        <button class="tool-btn" onclick="openAccount()" title="Account & cloud save" id="acct-btn">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></button>
         <button class="tool-btn" onclick="toggleTheme()" title="Toggle dark mode" id="theme-btn">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg></button>
       </div>
@@ -752,6 +788,12 @@ ORDER BY revenue DESC;</textarea>
       </div>
 
       <div class="card" style="margin-top:16px">
+        <h3 class="card-title">Account &amp; cloud save</h3>
+        <p class="sub" id="acct-line">Not signed in — progress lives only in this browser.</p>
+        <div class="form-row"><button class="btn" onclick="openAccount()">Open account</button><button class="btn ghost" onclick="cloudPush(true)" id="acct-push-btn" style="display:none">☁ Save to cloud now</button></div>
+      </div>
+
+      <div class="card" style="margin-top:16px">
         <h3 class="card-title">Class sync <span class="pill" style="margin-left:6px">optional</span></h3>
         <p class="sub">Connect to your class server to join the leaderboard. Only summary stats are shared — XP, streak, lessons, scores. Never your notes, applications, or resume.</p>
         <div class="form-row">
@@ -790,6 +832,44 @@ ORDER BY revenue DESC;</textarea>
   <div class="pal" role="dialog" aria-label="Search everything">
     <input id="pal-input" placeholder="Search lessons, docs, questions, actions…" autocomplete="off">
     <div class="pal-list" id="pal-list"></div>
+  </div>
+</div>
+
+<!-- AUTH / ACCOUNT -->
+<div class="auth-veil" id="auth-veil" style="display:none">
+  <div class="auth-card card">
+    <div class="auth-brand"><div class="brand-mark">DT</div><div><h1 style="font-family:var(--font-display);font-size:18px;font-weight:800">DataTrack</h1><span class="sub" style="font-size:11px;letter-spacing:.06em;text-transform:uppercase">Data Science Prep Studio</span></div></div>
+
+    <div id="auth-logged" style="display:none">
+      <div class="acct-row" style="margin:14px 0">
+        <div class="avatar" id="acct-avatar">?</div>
+        <div><b id="acct-name" style="font-family:var(--font-display)"></b><div class="sub" id="acct-email" style="font-size:12px"></div></div>
+      </div>
+      <p class="sub" id="cloud-status" style="margin-bottom:14px"><span class="cloud-dot"></span>Cloud save active — your progress follows your account on any device.</p>
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <button class="btn sm" onclick="cloudPush(true)">☁ Save now</button>
+        <button class="btn ghost sm" onclick="cloudPull(true)">⟳ Load from cloud</button>
+        <button class="btn ghost sm" style="color:var(--danger)" onclick="logout()">Log out</button>
+        <button class="btn ghost sm" style="margin-left:auto" onclick="closeAccount()">Close</button>
+      </div>
+    </div>
+
+    <div id="auth-forms">
+      <p class="sub">Sign in to save progress to the cloud and continue on any device.</p>
+      <input class="inp" id="auth-url" placeholder="Server URL, e.g. https://datatrack-api.onrender.com" style="margin-top:14px">
+      <div class="auth-tabs">
+        <button id="auth-tab-in" class="active" onclick="authTab('in')">Sign in</button>
+        <button id="auth-tab-up" onclick="authTab('up')">Create account</button>
+      </div>
+      <input class="inp" id="auth-name" placeholder="Your name" style="display:none">
+      <input class="inp" id="auth-email" type="email" placeholder="Email" autocomplete="email">
+      <input class="inp" id="auth-pass" type="password" placeholder="Password" autocomplete="current-password">
+      <div class="auth-err" id="auth-err"></div>
+      <button class="btn" id="auth-go" style="width:100%" onclick="authSubmit()">Sign in</button>
+      <div class="auth-or" id="g-or" style="display:none">or</div>
+      <div id="g-slot" style="display:flex;justify-content:center"></div>
+      <button class="auth-guest" onclick="guestMode()">Continue offline without an account →</button>
+    </div>
   </div>
 </div>
 
@@ -2989,6 +3069,194 @@ const _save=save; save=function(){_save();scheduleSync();};
 const _renderTracker=renderTracker; renderTracker=function(){_renderTracker();initSyncUI();};
 const _renderAnalytics=renderAnalytics; renderAnalytics=function(){_renderAnalytics();renderLeaderboard(false);};
 if(syncCfg().enabled)setTimeout(()=>syncNow(false),2500);
+</script>
+<script>
+/* ================= ACCOUNTS & CLOUD SAVE ================= */
+const AUTH_KEY="datatrack_auth", GUEST_KEY="datatrack_guest";
+let AUTH=(()=>{try{return JSON.parse(localStorage.getItem(AUTH_KEY))||null}catch(e){return null}})();
+let authMode="in", cloudDirty=false, cloudBusy=false;
+
+function apiURL(){return (AUTH&&AUTH.url)||($("auth-url")&&$("auth-url").value.trim().replace(/\/+$/,""))||(syncCfg().url||"");}
+async function api(path,opts={}){
+  const base=apiURL();
+  if(!base)throw new Error("no-server");
+  opts.headers=Object.assign({"Content-Type":"application/json"},opts.headers||{});
+  if(AUTH&&AUTH.token)opts.headers["Authorization"]="Bearer "+AUTH.token;
+  const res=await fetch(base+path,opts);
+  const data=await res.json().catch(()=>({}));
+  if(!res.ok)throw Object.assign(new Error(data.error||("HTTP "+res.status)),{status:res.status});
+  return data;
+}
+
+/* ---------- overlay ---------- */
+function openAccount(){
+  $("auth-veil").style.display="grid";
+  renderAccount();
+  if(!AUTH)initGoogle();
+}
+function closeAccount(){$("auth-veil").style.display="none";}
+function renderAccount(){
+  const logged=!!(AUTH&&AUTH.token);
+  $("auth-logged").style.display=logged?"block":"none";
+  $("auth-forms").style.display=logged?"none":"block";
+  if(logged){
+    $("acct-avatar").textContent=(AUTH.name||AUTH.email||"?")[0].toUpperCase();
+    $("acct-name").textContent=AUTH.name||"";
+    $("acct-email").textContent=AUTH.email||"";
+  }else{
+    $("auth-url").value=apiURL();
+  }
+  // tracker card + sidebar button
+  const line=$("acct-line");
+  if(line)line.innerHTML=logged
+    ?'<span class="cloud-dot"></span>Signed in as <b>'+esc(AUTH.name||AUTH.email)+'</b> — progress auto-saves to the cloud and follows you to any device.'
+    :'Not signed in — progress lives only in this browser. Sign in to sync across devices.';
+  const pb=$("acct-push-btn");if(pb)pb.style.display=logged?"inline-block":"none";
+  const ab=$("acct-btn");if(ab)ab.innerHTML=logged
+    ?'<span class="avatar" style="width:20px;height:20px;font-size:10px">'+esc((AUTH.name||"?")[0].toUpperCase())+'</span>'
+    :'<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>';
+}
+function authTab(m){
+  authMode=m;
+  $("auth-tab-in").classList.toggle("active",m==="in");
+  $("auth-tab-up").classList.toggle("active",m==="up");
+  $("auth-name").style.display=m==="up"?"block":"none";
+  $("auth-go").textContent=m==="up"?"Create account":"Sign in";
+  $("auth-err").textContent="";
+}
+function guestMode(){
+  localStorage.setItem(GUEST_KEY,"1");
+  closeAccount();
+  toast("Offline mode — sign in any time from the 👤 button");
+}
+
+/* ---------- email / password ---------- */
+async function authSubmit(){
+  const email=$("auth-email").value.trim(),pass=$("auth-pass").value,name=$("auth-name").value.trim();
+  const err=$("auth-err");err.textContent="";
+  if(!apiURL()){err.textContent="Enter your class server URL first (ask whoever deployed it).";return;}
+  if(!email||!pass){err.textContent="Email and password are both needed.";return;}
+  $("auth-go").disabled=true;$("auth-go").textContent=authMode==="up"?"Creating…":"Signing in…";
+  try{
+    const path=authMode==="up"?"/api/auth/signup":"/api/auth/login";
+    const body=authMode==="up"?{email,password:pass,name}:{email,password:pass};
+    const url=$("auth-url").value.trim().replace(/\/+$/,"");
+    AUTH={url};   // so api() targets the typed URL
+    const r=await api(path,{method:"POST",body:JSON.stringify(body)});
+    finishLogin(url,r);
+  }catch(e){
+    AUTH=null;
+    err.textContent=e.message==="no-server"?"Server URL missing.":(e.status?e.message:"Server unreachable — check the URL (free hosts take ~30s to wake).");
+  }
+  $("auth-go").disabled=false;
+  $("auth-go").textContent=authMode==="up"?"Create account":"Sign in"; // restore label WITHOUT wiping the error
+}
+
+/* ---------- Google ---------- */
+async function initGoogle(){
+  try{
+    if(!apiURL())return;
+    const cfg=await api("/api/config");
+    if(!cfg.googleClientId)return;
+    await new Promise((res,rej)=>{
+      if(window.google&&google.accounts)return res();
+      const s=document.createElement("script");s.src="https://accounts.google.com/gsi/client";
+      s.onload=res;s.onerror=rej;document.head.appendChild(s);
+    });
+    google.accounts.id.initialize({client_id:cfg.googleClientId,callback:async resp=>{
+      try{
+        const url=apiURL();
+        const r=await api("/api/auth/google",{method:"POST",body:JSON.stringify({credential:resp.credential})});
+        finishLogin(url,r);
+      }catch(e){$("auth-err").textContent=e.message;}
+    }});
+    $("g-or").style.display="flex";
+    google.accounts.id.renderButton($("g-slot"),{theme:"outline",size:"large",width:300});
+  }catch(e){/* Google not configured or offline — email login still works */}
+}
+
+/* ---------- session ---------- */
+function saveQuiet(){_save3();} // persists locally WITHOUT advancing the version clock
+function progressScore(st){return (st.xp||0)+Object.keys(st.done||{}).filter(k=>st.done[k]).length*10+(st.log||[]).length*5+Object.values(st.quiz||{}).flat().length*5;}
+function finishLogin(url,r){
+  AUTH={url,token:r.token,email:r.user.email,name:r.user.name,id:r.user.id};
+  localStorage.setItem(AUTH_KEY,JSON.stringify(AUTH));
+  localStorage.removeItem(GUEST_KEY);
+  // unify identity: leaderboard follows the account, on every device
+  S.uid="acct-"+r.user.id;
+  const c=syncCfg();
+  if(!c.url)c.url=url;
+  if(!c.name)c.name=r.user.name;
+  if(!c.enabled)c.enabled=true;
+  saveQuiet();   // logging in must not make this device look "newer" than the cloud
+  renderAccount();closeAccount();
+  toast("Welcome, "+(r.user.name||r.user.email)+" 👋");
+  cloudPull(false,true);
+}
+function logout(){
+  AUTH=null;localStorage.removeItem(AUTH_KEY);
+  renderAccount();
+  toast("Logged out — this device keeps its local copy of your progress");
+}
+
+/* ---------- cloud state sync ---------- */
+async function cloudPull(manual,initial){
+  if(!AUTH||!AUTH.token)return;
+  try{
+    const r=await api("/api/state");
+    if(!r.state){await cloudPush(false);return;}          // first login: seed cloud from this device
+    const localTs=S._ts||0, serverTs=r.state._ts||0;
+    let adopt;
+    if(initial){
+      // right after login, compare actual progress — protects the cloud copy from a fresh/empty device
+      const ls=progressScore(S), ss=progressScore(r.state);
+      adopt = ss>ls || (ss===ls && serverTs>localTs);
+    }else{
+      adopt = serverTs>localTs;
+    }
+    if(adopt){
+      S=Object.assign(JSON.parse(JSON.stringify(DEFAULTS)),r.state);
+      try{localStorage.setItem(KEY,JSON.stringify(S));}catch(e){}
+      applyTheme();genMissions();todayCounters();
+      show("dashboard");
+      if(manual)toast("Progress loaded from the cloud ⟳");
+      else toast("Synced — picked up where you left off");
+    }else if(localTs>serverTs||(initial&&progressScore(S)>progressScore(r.state))){
+      await cloudPush(false);                              // this device is ahead — push it up
+    }else if(manual)toast("Already up to date");
+    if($("cloud-status"))$("cloud-status").innerHTML='<span class="cloud-dot"></span>Cloud save active · last check '+new Date().toLocaleTimeString();
+  }catch(e){if(manual)toast("Couldn't reach the cloud — will retry automatically");}
+}
+async function cloudPush(manual){
+  if(!AUTH||!AUTH.token||cloudBusy)return;
+  cloudBusy=true;
+  try{
+    await api("/api/state",{method:"POST",body:JSON.stringify({state:S})});
+    cloudDirty=false;
+    if(manual)toast("Progress saved to the cloud ☁");
+    if($("cloud-status"))$("cloud-status").innerHTML='<span class="cloud-dot"></span>Cloud save active · saved '+new Date().toLocaleTimeString();
+  }catch(e){if(manual)toast("Cloud save failed — will retry automatically");}
+  cloudBusy=false;
+}
+/* chain onto the save pipeline: stamp a version clock, mark dirty */
+const _save3=save; save=function(){S._ts=Date.now();_save3();cloudDirty=true;};
+setInterval(()=>{if(cloudDirty&&AUTH&&AUTH.token&&navigator.onLine!==false)cloudPush(false);},30000);
+window.addEventListener("beforeunload",()=>{
+  if(cloudDirty&&AUTH&&AUTH.token){
+    try{fetch(apiURL()+"/api/state",{method:"POST",keepalive:true,
+      headers:{"Content-Type":"application/json","Authorization":"Bearer "+AUTH.token},
+      body:JSON.stringify({state:S})});}catch(e){}
+  }
+});
+document.addEventListener("visibilitychange",()=>{if(document.hidden&&cloudDirty)cloudPush(false);});
+
+/* ---------- boot gate ---------- */
+renderAccount();
+if(AUTH&&AUTH.token){
+  setTimeout(()=>cloudPull(false),600);
+}else if(!localStorage.getItem(GUEST_KEY)){
+  openAccount();   // first visit: offer sign-in (guest link keeps it optional)
+}
 </script>
 </body>
 </html>
